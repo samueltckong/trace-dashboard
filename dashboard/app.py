@@ -65,7 +65,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.image("https://framerusercontent.com/images/gpjxMZh0Y52v5IS0EEcOUN5mZj0.gif?width=1792&height=752", use_container_width=True)
 st.sidebar.markdown("### AIxBio Hackathon 2026")
 st.sidebar.markdown("**Track 1:** DNA Screening & Synthesis Controls")
 st.sidebar.markdown("**Sponsor:** Cambridge Boston Alignment Initiative (CBAI)")
@@ -326,8 +325,6 @@ with tab4:
             st.info("Click 'Test Guardrail' to simulate API response")
     
     st.markdown("---")
-    st.markdown("### Integration Architecture")
-    st.image("https://framerusercontent.com/images/gpjxMZh0Y52v5IS0EEcOUN5mZj0.gif?width=1792&height=752", use_container_width=True, caption="TRACE sits between AI design tools and synthesis providers")
     
     st.markdown("### Policy Compliance")
     st.success("✅ OSTP 2024 Framework | ✅ IGSC v3.0 | ✅ Biosecurity Modernization Act S.3741 | ✅ NTI Managed Access Principles")
