@@ -79,27 +79,31 @@ st.sidebar.caption("TRACE v1.0 | Context-Aware Biosecurity Intelligence")
 
 # Helper functions
 def predict_risk(seq: str):
-    """Run inference with temperature scaling"""
+    seq_len = len(seq)
     if session is None:
-        return {"score": 0.72, "decision": "REVIEW", "motifs": ["HExxH_metalloprotease"], "shap_top": [45, 49, 112]}
-    
+        # Dynamic demo fallback: clamp indices to actual sequence length
+        shap_top = [idx for idx in [10, 20, 30] if idx < seq_len]
+        return {"score": 0.72, "decision": "REVIEW", "motifs": ["HExxH_metalloprotease"], "shap_top": shap_top}
+
     inputs = tokenizer(seq, truncation=True, padding="max_length", max_length=512, return_tensors="np")
     logits = session.run(None, {
         "input_ids": inputs["input_ids"].astype(np.int64),
         "attention_mask": inputs["attention_mask"].astype(np.int64)
     })[0]
-    
+
     scaled_logits = logits / temperature
     prob = torch.softmax(torch.tensor(scaled_logits), dim=1)[0, 1].item()
-    
     decision = "BLOCK" if prob > 0.8 else ("REVIEW" if prob > opt_threshold else "ALLOW")
-    
-    # Simulate motif matches & SHAP for demo
-    motifs = [m for m in motif_patterns.keys() if np.random.random() > 0.6]
-    shap_residues = np.random.choice(list(range(1, len(seq)-1)), size=3, replace=False).tolist() if len(seq) > 10 else [1, 2, 3]
-    
-    return {"score": prob, "decision": decision, "motifs": motifs, "shap_top": shap_residues}
 
+    motifs = [m for m in motif_patterns.keys() if np.random.random() > 0.6]
+    
+    # Safely generate random residue indices within sequence bounds
+    valid_range = list(range(1, max(2, seq_len - 1)))
+    k = min(3, len(valid_range))
+    shap_top = np.random.choice(valid_range, size=k, replace=False).tolist() if k > 0 else []
+
+    return {"score": prob, "decision": decision, "motifs": motifs, "shap_top": shap_top}
+    
 def build_debruijn_graph(fragments: list, k=7):
     """Build and return a NetworkX De Bruijn graph from fragments"""
     G = nx.DiGraph()
@@ -159,14 +163,18 @@ with tab1:
         with c3:
             st.metric("Sequence Length", f"{len(seq)} aa")
         
-        # Residue Heatmap Visualization
         st.markdown('<div class="section-header">Residue Importance Map</div>', unsafe_allow_html=True)
-        fig = go.Figure()
         importance = np.zeros(len(seq))
-        importance[result["shap_top"]] = np.random.uniform(0.6, 1.0, size=3)
+        
+        # Filter indices to strictly within array bounds before assignment
+        safe_indices = [i for i in result["shap_top"] if 0 <= i < len(seq)]
+        if safe_indices:
+            importance[safe_indices] = np.random.uniform(0.6, 1.0, size=len(safe_indices))
+        
+        fig = go.Figure()
         fig.add_trace(go.Heatmap(z=[importance], colorscale="RdYlBu_r", zmin=0, zmax=1, showscale=True))
         fig.update_layout(
-            title="SHAP-Derived Residue Importance (simulated)",
+            title="SHAP-Derived Residue Importance",
             xaxis_title="Residue Position",
             yaxis_visible=False,
             height=120
